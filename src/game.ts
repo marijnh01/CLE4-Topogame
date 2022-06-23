@@ -1,7 +1,9 @@
 import * as PIXI from "pixi.js";
 import { Enemy } from "./enemy"
 import { Player } from "./player";
+import { Powerup } from "./powerup"
 
+import powerupImage from "./images/star.png"
 import backgroundImage from "./images/background_nl.png";
 import enemyImage from "./images/spacepirate.png"
 import deadImage from "./images/spacepirate_destroyed.png"
@@ -13,7 +15,9 @@ export class Game {
     loader: PIXI.Loader;
     background: PIXI.Sprite;
     enemies: Enemy[] = [];
+    powerups: Powerup[] = [];
     player: Player;
+    spawnCounter:number = 0;
 
     constructor() {
         this.pixi = new PIXI.Application({
@@ -24,6 +28,7 @@ export class Game {
         
         this.loader = new PIXI.Loader();
         this.loader
+            .add("powerupTexture", powerupImage)
             .add("playerTexture", playerImage)
             .add("enemytexture", enemyImage)
             .add("deadTexture", deadImage)
@@ -53,13 +58,19 @@ export class Game {
         this.pixi.stage.x = this.pixi.screen.width / 2
         this.pixi.stage.y = this.pixi.screen.height / 2
 
+        //powerup
+
+
         this.pixi.ticker.add((delta) => this.update(delta))
+   }
 
-
-    }
+   removePowerupFromGame(powerup:Powerup) {
+    this.powerups = this.powerups.filter((p) => p !== powerup)
+}
 
     update(delta: number) {
         this.player.update(delta);
+        
         for (let enemy of this.enemies) {
             if (this.collision(enemy, this.player)) {
                 enemy.texture = this.loader.resources["deadTexture"].texture!;
@@ -67,8 +78,25 @@ export class Game {
                 enemy.filters = [color_none]
                 color_none.hue(0, false)
               }
-            enemy.update(delta);
+            enemy.update(delta); }
+
+            //spawncounter voor powerup
+            this.spawnCounter+=delta
+             if(this.spawnCounter > 100) {
+            this.spawnCounter = 0
+            let powerup = new Powerup(this, this.loader.resources["powerupTexture"].texture!)
+            this.powerups.push(powerup)
+            this.pixi.stage.addChild(powerup);
         }
+
+        for (let i = 0; i < this.powerups.length; i++) {
+            if (this.collision(this.player, this.powerups[i])){
+                this.powerups[i].destroy();
+                this.powerups.splice(i,1)
+            }
+            }
+        
+
     }
     collision(sprite1: PIXI.Sprite, sprite2: PIXI.Sprite) {
         const bounds1 = sprite1.getBounds();
