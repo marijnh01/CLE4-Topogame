@@ -2,12 +2,15 @@ import * as PIXI from "pixi.js";
 import { Enemy } from "./enemy"
 import { Player } from "./player";
 import { Powerup } from "./powerup"
+import { Location } from "./location";
+import { UI } from "./interface";
 
 import powerupImage from "./images/star.png"
 import backgroundImage from "./images/background_nl.png";
 import enemyImage from "./images/spacepirate.png"
 import deadImage from "./images/spacepirate_destroyed.png"
 import playerImage from "./images/spacecraft.png";
+import locationImage from "./images/location_zuid-holland.png";
 
 export class Game {
 
@@ -18,6 +21,8 @@ export class Game {
     powerups: Powerup[] = [];
     player: Player;
     spawnCounter:number = 0;
+    interface : UI;
+    locations: Location[] = [];
 
     constructor() {
         this.pixi = new PIXI.Application({
@@ -32,6 +37,7 @@ export class Game {
             .add("playerTexture", playerImage)
             .add("enemytexture", enemyImage)
             .add("deadTexture", deadImage)
+            .add("locationTexture", locationImage)
             .add("backgroundTexture", backgroundImage);
         document.body.appendChild(this.pixi.view)
 
@@ -43,6 +49,15 @@ export class Game {
         //Background
         this.background = new PIXI.Sprite(this.loader.resources["backgroundTexture"].texture!);
         this.pixi.stage.addChild(this.background)
+
+        //location
+        for (let i = 0; i < 12; i++) {
+            let location = new Location(this.loader.resources["locationTexture"].texture!, this);
+            location.scale.x = 1.04;
+            location.scale.y = 1.04;
+            this.locations.push(location);
+            this.pixi.stage.addChild(location);
+        }
 
         //enemy
         for (let i = 0; i < 10; i++) {
@@ -60,8 +75,16 @@ export class Game {
 
         //powerup
 
-
         this.pixi.ticker.add((delta) => this.update(delta))
+
+        //UI
+        this.interface = new UI(this);
+        this.pixi.stage.addChild(this.interface);
+        
+        this.pixi.stage.x = this.pixi.screen.width / 2;
+        this.pixi.stage.y = this.pixi.screen.height / 2;
+        
+        this.pixi.ticker.add((delta) => this.update(delta));
    }
 
    removePowerupFromGame(powerup:Powerup) {
@@ -70,6 +93,18 @@ export class Game {
 
     update(delta: number) {
         this.player.update(delta);
+        this.interface.update(delta);
+
+        for (const location of this.locations) {
+            const color = new PIXI.filters.ColorMatrixFilter()
+            location.filters = [color];
+            location.update(delta);
+            if (this.collision(this.player, location)) {
+                color.grayscale(0.2, false);
+            } else {
+                color.grayscale(0.325, false);
+            }
+        }
         
         for (let enemy of this.enemies) {
             if (this.collision(enemy, this.player)) {

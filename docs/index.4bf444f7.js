@@ -539,6 +539,8 @@ var _pixiJs = require("pixi.js");
 var _enemy = require("./enemy");
 var _player = require("./player");
 var _powerup = require("./powerup");
+var _location = require("./location");
+var _interface = require("./interface");
 var _starPng = require("./images/star.png");
 var _starPngDefault = parcelHelpers.interopDefault(_starPng);
 var _backgroundNlPng = require("./images/background_nl.png");
@@ -549,10 +551,13 @@ var _spacepirateDestroyedPng = require("./images/spacepirate_destroyed.png");
 var _spacepirateDestroyedPngDefault = parcelHelpers.interopDefault(_spacepirateDestroyedPng);
 var _spacecraftPng = require("./images/spacecraft.png");
 var _spacecraftPngDefault = parcelHelpers.interopDefault(_spacecraftPng);
+var _locationZuidHollandPng = require("./images/location_zuid-holland.png");
+var _locationZuidHollandPngDefault = parcelHelpers.interopDefault(_locationZuidHollandPng);
 class Game {
     enemies = [];
     powerups = [];
     spawnCounter = 0;
+    locations = [];
     constructor(){
         this.pixi = new _pixiJs.Application({
             width: screen.width,
@@ -560,7 +565,7 @@ class Game {
         });
         document.body.appendChild(this.pixi.view);
         this.loader = new _pixiJs.Loader();
-        this.loader.add("powerupTexture", _starPngDefault.default).add("playerTexture", _spacecraftPngDefault.default).add("enemytexture", _spacepiratePngDefault.default).add("deadTexture", _spacepirateDestroyedPngDefault.default).add("backgroundTexture", _backgroundNlPngDefault.default);
+        this.loader.add("powerupTexture", _starPngDefault.default).add("playerTexture", _spacecraftPngDefault.default).add("enemytexture", _spacepiratePngDefault.default).add("deadTexture", _spacepirateDestroyedPngDefault.default).add("locationTexture", _locationZuidHollandPngDefault.default).add("backgroundTexture", _backgroundNlPngDefault.default);
         document.body.appendChild(this.pixi.view);
         this.loader.load(()=>this.doneLoading()
         );
@@ -569,8 +574,16 @@ class Game {
         //Background
         this.background = new _pixiJs.Sprite(this.loader.resources["backgroundTexture"].texture);
         this.pixi.stage.addChild(this.background);
+        //location
+        for(let i = 0; i < 12; i++){
+            let location = new _location.Location(this.loader.resources["locationTexture"].texture, this);
+            location.scale.x = 1.04;
+            location.scale.y = 1.04;
+            this.locations.push(location);
+            this.pixi.stage.addChild(location);
+        }
         //enemy
-        for(let i = 0; i < 10; i++){
+        for(let i1 = 0; i1 < 10; i1++){
             let enemy = new _enemy.Enemy(this, this.loader.resources["enemytexture"].texture, this.loader.resources["deadTexture"].texture);
             this.pixi.stage.addChild(enemy);
             this.enemies.push(enemy);
@@ -583,6 +596,13 @@ class Game {
         //powerup
         this.pixi.ticker.add((delta)=>this.update(delta)
         );
+        //UI
+        this.interface = new _interface.UI(this);
+        this.pixi.stage.addChild(this.interface);
+        this.pixi.stage.x = this.pixi.screen.width / 2;
+        this.pixi.stage.y = this.pixi.screen.height / 2;
+        this.pixi.ticker.add((delta)=>this.update(delta)
+        );
     }
     removePowerupFromGame(powerup) {
         this.powerups = this.powerups.filter((p)=>p !== powerup
@@ -590,6 +610,16 @@ class Game {
     }
     update(delta) {
         this.player.update(delta);
+        this.interface.update(delta);
+        for (const location of this.locations){
+            const color = new _pixiJs.filters.ColorMatrixFilter();
+            location.filters = [
+                color
+            ];
+            location.update(delta);
+            if (this.collision(this.player, location)) color.grayscale(0.2, false);
+            else color.grayscale(0.325, false);
+        }
         for (let enemy of this.enemies){
             if (this.collision(enemy, this.player)) {
                 enemy.texture = this.loader.resources["deadTexture"].texture;
@@ -621,7 +651,7 @@ class Game {
     }
 }
 
-},{"pixi.js":"dsYej","./enemy":"e8Rej","./player":"6OTSH","./images/star.png":"gxOef","./images/background_nl.png":"fNGPz","./images/spacepirate.png":"2FE4X","./images/spacepirate_destroyed.png":"abLa8","./images/spacecraft.png":"gZ8P8","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./powerup":"Z0eLv"}],"dsYej":[function(require,module,exports) {
+},{"pixi.js":"dsYej","./enemy":"e8Rej","./player":"6OTSH","./powerup":"Z0eLv","./images/star.png":"gxOef","./images/background_nl.png":"fNGPz","./images/spacepirate.png":"2FE4X","./images/spacepirate_destroyed.png":"abLa8","./images/spacecraft.png":"gZ8P8","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./location":"6PjY6","./interface":"5yLgp","./images/location_zuid-holland.png":"1jX2W"}],"dsYej":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "utils", ()=>_utils
@@ -37254,6 +37284,23 @@ class Player extends _pixiJs.Sprite {
     }
 }
 
+},{"pixi.js":"dsYej","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"Z0eLv":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Powerup", ()=>Powerup
+);
+var _pixiJs = require("pixi.js");
+class Powerup extends _pixiJs.Sprite {
+    constructor(game, texture){
+        super(texture);
+        this.game = game;
+        this.x = Math.random() * 2000;
+        this.y = Math.random() * 2000;
+        this.scale.set(0.05);
+    }
+    update(delta) {}
+}
+
 },{"pixi.js":"dsYej","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"gxOef":[function(require,module,exports) {
 module.exports = require('./helpers/bundle-url').getBundleURL('jcCUn') + "star.7883fbe8.png" + "?" + Date.now();
 
@@ -37303,23 +37350,234 @@ module.exports = require('./helpers/bundle-url').getBundleURL('jcCUn') + "spacep
 },{"./helpers/bundle-url":"lgJ39"}],"gZ8P8":[function(require,module,exports) {
 module.exports = require('./helpers/bundle-url').getBundleURL('jcCUn') + "spacecraft.ff71d254.png" + "?" + Date.now();
 
-},{"./helpers/bundle-url":"lgJ39"}],"Z0eLv":[function(require,module,exports) {
+},{"./helpers/bundle-url":"lgJ39"}],"6PjY6":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "Powerup", ()=>Powerup
+parcelHelpers.export(exports, "Location", ()=>Location
 );
 var _pixiJs = require("pixi.js");
-class Powerup extends _pixiJs.Sprite {
-    constructor(game, texture){
+class Location extends _pixiJs.Sprite {
+    locationPositions = [
+        1290,
+        400,
+        939,
+        688,
+        1001,
+        267,
+        892,
+        728,
+        1282,
+        250,
+        1048,
+        1165,
+        626,
+        1134,
+        735,
+        516,
+        1142,
+        594,
+        837,
+        884,
+        329,
+        1172,
+        501,
+        860
+    ];
+    constructor(texture, game){
         super(texture);
         this.game = game;
-        this.x = Math.random() * 2000;
-        this.y = Math.random() * 2000;
-        this.scale.set(0.05);
+        for(let i = 0; i < 12; i++){
+            this.x = this.locationPositions[i * 2];
+            this.y = this.locationPositions[i * 2 + 1];
+        }
+        this.interactive = true;
+        this.on("pointerdown", ()=>this.onClick()
+        );
+    }
+    //Click
+    onClick() {
+        console.log("Click");
+        const style = new _pixiJs.TextStyle({
+            fontFamily: 'Silkscreen',
+            fontSize: 40,
+            fontWeight: 'bold',
+            fill: [
+                '#1e1e1e'
+            ]
+        });
+        this.endText = new _pixiJs.Text(`Goed`, style);
+        this.endText.x = 0;
+        this.endText.y = 0;
+        this.addChild(this.endText);
     }
     update(delta) {}
 }
 
-},{"pixi.js":"dsYej","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}]},["6XGE1","h7u1C"], "h7u1C", "parcelRequire6d49")
+},{"pixi.js":"dsYej","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"5yLgp":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "UI", ()=>UI
+);
+var _pixiJs = require("pixi.js");
+class UI extends _pixiJs.Container {
+    xspeed = 0;
+    yspeed = 0;
+    constructor(game){
+        super();
+        this.game = game;
+        this.x = game.pixi.screen.width / 2;
+        this.y = game.pixi.screen.height / 2;
+        //Text Box
+        const textBox = new _pixiJs.Graphics();
+        textBox.beginFill(0xFFFFFF);
+        textBox.lineStyle(8, 0x1E1E1E);
+        textBox.drawRect(-200, -380, 400, 50);
+        this.addChild(textBox);
+        //Box Lines Text Box
+        const textBox_line_l1 = new _pixiJs.Graphics();
+        const textBox_line_l2 = new _pixiJs.Graphics();
+        const textBox_line_l3 = new _pixiJs.Graphics();
+        const textBox_line_r1 = new _pixiJs.Graphics();
+        const textBox_line_r2 = new _pixiJs.Graphics();
+        const textBox_line_r3 = new _pixiJs.Graphics();
+        textBox_line_l1.lineStyle(5, 0x1E1E1E);
+        textBox_line_l2.lineStyle(5, 0x1E1E1E);
+        textBox_line_l3.lineStyle(5, 0x1E1E1E);
+        textBox_line_r1.lineStyle(5, 0x1E1E1E);
+        textBox_line_r2.lineStyle(5, 0x1E1E1E);
+        textBox_line_r3.lineStyle(5, 0x1E1E1E);
+        textBox_line_l1.drawRect(-290, -375, 75, 5);
+        textBox_line_l2.drawRect(-265, -357.5, 50, 5);
+        textBox_line_l3.drawRect(-240, -340, 25, 5);
+        textBox_line_r1.drawRect(215, -375, 75, 5);
+        textBox_line_r2.drawRect(215, -357.5, 50, 5);
+        textBox_line_r3.drawRect(215, -340, 25, 5);
+        this.addChild(textBox_line_l1);
+        this.addChild(textBox_line_l2);
+        this.addChild(textBox_line_l3);
+        this.addChild(textBox_line_r1);
+        this.addChild(textBox_line_r2);
+        this.addChild(textBox_line_r3);
+        //Text
+        const style = new _pixiJs.TextStyle({
+            fontFamily: 'Silkscreen',
+            fontSize: 40,
+            fontWeight: 'bold',
+            fill: [
+                '#1e1e1e'
+            ]
+        });
+        this.textField = new _pixiJs.Text(`Zuid-Holland`, style);
+        this.textField.x = -150;
+        this.textField.y = -378;
+        this.addChild(this.textField);
+        //Score Box
+        const scoreBox = new _pixiJs.Graphics();
+        scoreBox.beginFill(0xFFFFFF);
+        scoreBox.lineStyle(8, 0x1E1E1E);
+        scoreBox.drawRect(650, -380, 80, 50);
+        this.addChild(scoreBox);
+        //Box Line Score Box
+        const scoreBox_line_1 = new _pixiJs.Graphics();
+        const scoreBox_line_2 = new _pixiJs.Graphics();
+        const scoreBox_line_3 = new _pixiJs.Graphics();
+        scoreBox_line_1.lineStyle(5, 0x1E1E1E);
+        scoreBox_line_2.lineStyle(5, 0x1E1E1E);
+        scoreBox_line_3.lineStyle(5, 0x1E1E1E);
+        scoreBox_line_1.drawRect(560, -375, 75, 5);
+        textBox_line_l2.drawRect(585, -357.5, 50, 5);
+        textBox_line_l3.drawRect(610, -340, 25, 5);
+        this.addChild(scoreBox_line_1);
+        this.addChild(scoreBox_line_2);
+        this.addChild(scoreBox_line_3);
+        //Score
+        const score = new _pixiJs.TextStyle({
+            fontFamily: 'Silkscreen',
+            fontSize: 30,
+            fontWeight: 'bold',
+            fill: [
+                '#1e1e1e'
+            ]
+        });
+        this.scoreField = new _pixiJs.Text(`000`, score);
+        this.scoreField.x = 658;
+        this.scoreField.y = -372;
+        this.addChild(this.scoreField);
+        //Lives Box
+        const livesBox = new _pixiJs.Graphics();
+        // const livesHitBox = new PIXI.Graphics();
+        livesBox.beginFill(0x54CD86);
+        // livesHitBox.beginFill(0xc71818);
+        livesBox.lineStyle(8, 0x1E1E1E);
+        livesBox.drawRect(-725, 225, 250, 20);
+        // livesHitBox.drawRect(-721, 229, 242, 12);
+        this.addChild(livesBox);
+        // this.addChild(livesHitBox); 
+        //Temporary ASWD and Arrow Movement
+        window.addEventListener("keydown", (e)=>this.onKeyDown(e)
+        );
+        window.addEventListener("keyup", (e)=>this.onKeyUp(e)
+        );
+    }
+    update(delta) {
+        let mapwidth = 2000;
+        let mapheight = 2000;
+        let centerx = 0;
+        let centery = 0;
+        this.x = this.clamp(this.x + this.xspeed, 0, mapwidth);
+        this.y = this.clamp(this.y + this.yspeed, 0, mapheight);
+        let mapx = this.clamp(this.x, centerx, mapwidth - centerx);
+        let mapy = this.clamp(this.y, centery, mapheight - centery);
+        this.game.pixi.stage.pivot.set(mapx, mapy);
+    }
+    clamp(num, min, max) {
+        return Math.min(Math.max(num, min), max);
+    }
+    //Temporary ASWD and Arrows Movement
+    //Change This To Mouse Movement
+    onKeyDown(e) {
+        switch(e.key.toUpperCase()){
+            case "A":
+            case "ARROWLEFT":
+                this.xspeed = -7;
+                break;
+            case "D":
+            case "ARROWRIGHT":
+                this.xspeed = 7;
+                break;
+            case "W":
+            case "ARROWUP":
+                this.yspeed = -7;
+                break;
+            case "S":
+            case "ARROWDOWN":
+                this.yspeed = 7;
+                break;
+        }
+    }
+    onKeyUp(e) {
+        switch(e.key.toUpperCase()){
+            case " ":
+                break;
+            case "A":
+            case "D":
+            case "ARROWLEFT":
+            case "ARROWRIGHT":
+                this.xspeed = 0;
+                break;
+            case "W":
+            case "S":
+            case "ARROWUP":
+            case "ARROWDOWN":
+                this.yspeed = 0;
+                break;
+        }
+    }
+}
+
+},{"pixi.js":"dsYej","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"1jX2W":[function(require,module,exports) {
+module.exports = require('./helpers/bundle-url').getBundleURL('jcCUn') + "location_zuid-holland.6309c8b2.png" + "?" + Date.now();
+
+},{"./helpers/bundle-url":"lgJ39"}]},["6XGE1","h7u1C"], "h7u1C", "parcelRequire6d49")
 
 //# sourceMappingURL=index.4bf444f7.js.map
